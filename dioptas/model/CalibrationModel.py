@@ -382,13 +382,6 @@ class CalibrationModel(QtCore.QObject):
     def get_point_array(self):
         return self.create_point_array(self.points, self.points_index)
 
-    def get_ring_point_array(self, ring_ind):
-        res = []
-        for ind in self.points_index:
-            if ind == ring_ind:
-                res.append(self.points[ind])
-        pass
-
     def get_calibration_parameter(self):
         pyFAI_parameter = self.pattern_geometry.getPyFAI()
         pyFAI_parameter['polarization_factor'] = self.polarization_factor
