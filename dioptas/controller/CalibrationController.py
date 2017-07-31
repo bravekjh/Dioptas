@@ -77,6 +77,7 @@ class CalibrationController(object):
         self.widget.refine_btn.clicked.connect(self.refine)
 
         self.widget.peak_num_sb.valueChanged.connect(self.update_scatter_plot_colors)
+        self.widget.clear_ring_btn.clicked.connect(self.clear_ring_btn_click)
         self.widget.clear_all_peaks_btn.clicked.connect(self.clear_all_peaks_btn_click)
 
         self.widget.f2_wavelength_cb.stateChanged.connect(self.wavelength_cb_changed)
@@ -295,7 +296,7 @@ class CalibrationController(object):
             if self.widget.automatic_peak_num_inc_cb.checkState():
                 self.widget.peak_num_sb.setValue(peak_ind + 2)
             else:
-                self.update_scatter_plot_colors() # needs to called separately when peak_num_sb is not changed.
+                self.update_scatter_plot_colors()  # needs to called separately when peak_num_sb is not changed.
 
     def plot_points_ring(self, ind):
         """
@@ -314,6 +315,12 @@ class CalibrationController(object):
                                                          points_on_ring[:, 0] + 0.5,
                                                          points_on_ring[:, 1] + 0.5)
 
+    def clear_ring_btn_click(self):
+        ind = self.widget.peak_num_sb.value() - 1
+        if len(self.widget.img_widget.scatter_plot_items) > ind:
+            self.model.calibration_model.clear_ring(ind)
+            self.widget.img_widget.set_scatter_plot_data(ind, [], [])
+
     def clear_all_peaks_btn_click(self):
         """
         Deletes all points/peaks in the calibration_data and in the gui.
@@ -331,8 +338,6 @@ class CalibrationController(object):
         if len(self.widget.img_widget.scatter_plot_items) > ind:
             self.widget.img_widget.set_scatter_plot_color(ind, (255, 135, 0))
             self.widget.img_widget.set_scatter_plot_marker_size(ind, 10)
-
-
 
     def wavelength_cb_changed(self, value):
         """

@@ -25,7 +25,7 @@ import numpy as np
 from qtpy import QtWidgets, QtCore
 from qtpy.QtTest import QTest
 
-from ..utility import QtTest, unittest_data_path
+from ..utility import QtTest, unittest_data_path, click_button
 from ...model.DioptasModel import DioptasModel
 from ...controller.CalibrationController import CalibrationController
 from ...widgets.CalibrationWidget import CalibrationWidget
@@ -57,6 +57,17 @@ class TestCalibrationController(QtTest):
         self.calibration_widget.img_widget.mouse_left_clicked.emit(525.252854758, 667.380513299)
         self.assertEqual(len(self.calibration_widget.img_widget.scatter_plot_items), 2)
 
+    def test_clear_ring(self):
+        self.model.img_model.load(os.path.join(unittest_data_path, 'CeO2_Pilatus1M.tif'))
+        self.calibration_widget.img_widget.mouse_left_clicked.emit(646, 517.66443467 )
+        self.calibration_widget.img_widget.mouse_left_clicked.emit(525.252854758, 667.380513299)
+        click_button(self.calibration_widget.clear_ring_btn)
+        self.assertEqual(len(self.model.calibration_model.points_index), 2)
+
+        self.calibration_widget.peak_num_sb.setValue(1)
+        click_button(self.calibration_widget.clear_ring_btn)
+        self.assertEqual(len(self.model.calibration_model.points_index), 1)
+        self.assertEqual(len(self.calibration_widget.img_widget.scatter_plot_items[0].getData()), 0)
 
     def test_automatic_calibration(self):
         QtWidgets.QFileDialog.getOpenFileName = MagicMock(

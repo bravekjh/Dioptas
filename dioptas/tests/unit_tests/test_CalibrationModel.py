@@ -169,6 +169,26 @@ class CalibrationModelTest(QtTest):
         self.img_model.load(os.path.join(data_path, 'CeO2_Pilatus1M.tif'))
         self.calibration_model.integrate_2d()
 
+    def test_clear_points_on_ring(self):
+        self.load_pilatus_1M_and_find_peaks()
+        self.assertEqual(len(self.calibration_model.points_index), 6)
+        self.assertEqual(len(self.calibration_model.points), 6)
+        self.calibration_model.clear_ring(0)
+        self.assertEqual(len(self.calibration_model.points_index), 0)
+        self.assertEqual(len(self.calibration_model.points), 0)
+
+        self.load_pilatus_1M_and_find_peaks()
+        self.assertEqual(len(self.calibration_model.points_index), 6)
+        self.calibration_model.find_peaks_automatic(667.380513299, 525.252854758, 1)
+        self.calibration_model.find_peaks_automatic(671.110095329, 473.571503774, 2)
+        self.calibration_model.find_peaks_automatic(592.788872703, 350.495296791, 3)
+        self.calibration_model.find_peaks_automatic(387.395462348, 390.987901686, 4)
+        self.assertEqual(len(self.calibration_model.points_index), 10)
+        self.calibration_model.clear_ring(0)
+        self.assertEqual(len(self.calibration_model.points_index), 4)
+        self.calibration_model.clear_ring(3)
+        self.assertEqual(len(self.calibration_model.points_index), 3)
+
 
 if __name__ == '__main__':
     unittest.main()

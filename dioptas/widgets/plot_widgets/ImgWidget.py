@@ -167,7 +167,7 @@ class ImgWidget(QtCore.QObject):
             del self.scatter_plot_items[ind]
 
     def set_scatter_plot_data(self, ind, x, y):
-        self.scatter_plot_items[-1].setData(x=y, y=x)
+        self.scatter_plot_items[ind].setData(x=y, y=x)
 
     def set_scatter_plot_color(self, ind, color):
         self.scatter_plot_items[ind].setBrush(QtGui.QBrush(QtGui.QColor(*color), 1))

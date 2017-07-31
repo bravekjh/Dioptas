@@ -128,6 +128,12 @@ class CalibrationModel(QtCore.QObject):
         self.points_index.append(peak_ind)
         return np.array([np.array((x_ind, y_ind))])
 
+    def clear_ring(self, ring_ind):
+        remove_ind = np.where(np.array(self.points_index) == ring_ind)[0]
+        for ind in reversed(sorted(remove_ind)):
+            del self.points[ind]
+            del self.points_index[ind]
+
     def clear_peaks(self):
         self.points = []
         self.points_index = []
@@ -375,6 +381,13 @@ class CalibrationModel(QtCore.QObject):
 
     def get_point_array(self):
         return self.create_point_array(self.points, self.points_index)
+
+    def get_ring_point_array(self, ring_ind):
+        res = []
+        for ind in self.points_index:
+            if ind == ring_ind:
+                res.append(self.points[ind])
+        pass
 
     def get_calibration_parameter(self):
         pyFAI_parameter = self.pattern_geometry.getPyFAI()
