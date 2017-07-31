@@ -38,8 +38,9 @@ class ImgWidget(QtCore.QObject):
         self.orientation = orientation
 
         self.create_graphics()
-        self.create_scatter_plot()
         self.modify_mouse_behavior()
+
+        self.scatter_plot_items = []
 
         self.img_data = None
         self.mask_data = None
@@ -104,10 +105,6 @@ class ImgWidget(QtCore.QObject):
             # self.bottom_axis_image.hide()
             # self.left_axis_image.hide()
 
-    def create_scatter_plot(self):
-        self.img_scatter_plot_item = pg.ScatterPlotItem(pen=pg.mkPen('w'), brush=pg.mkBrush('r'))
-        self.img_view_box.addItem(self.img_scatter_plot_item)
-
     def plot_image(self, img_data, auto_level=False):
         self.img_data = img_data
         self.data_img_item.setImage(img_data.T, auto_level)
@@ -160,17 +157,21 @@ class ImgWidget(QtCore.QObject):
 
         self.img_histogram_LUT.setLevels(min_level, max_level)
 
-    def add_scatter_data(self, x, y):
-        self.img_scatter_plot_item.addPoints(x=y, y=x)
+    def add_scatter_plot(self, marker_color='r'):
+        self.scatter_plot_items.append(pg.ScatterPlotItem(pen=pg.mkPen('w'), brush=pg.mkBrush(marker_color)))
+        self.img_view_box.addItem(self.scatter_plot_items[-1])
+
+    def remove_scatter_plot(self, ind=-1):
+        if len(self.scatter_plot_items) > 0:
+            self.img_view_box.removeItem(self.scatter_plot_items[ind])
+            del self.scatter_plot_items[ind]
+
+    def set_scatter_plot_data(self, ind, x, y):
+        self.scatter_plot_items[-1].setData(x=y, y=x)
 
     def clear_scatter_plot(self):
-        self.img_scatter_plot_item.setData(x=None, y=None)
-
-    def hide_scatter_plot(self):
-        self.img_scatter_plot_item.hide()
-
-    def show_scatter_plot(self):
-        self.img_scatter_plot_item.show()
+        for ind in range(len(self.scatter_plot_items)):
+            self.remove_scatter_plot(-1)
 
     def mouseMoved(self, pos):
         pos = self.data_img_item.mapFromScene(pos)
@@ -200,7 +201,7 @@ class ImgWidget(QtCore.QObject):
 
         elif ev.button() == QtCore.Qt.LeftButton:
             pos = self.img_view_box.mapFromScene(ev.pos())
-            pos = self.img_scatter_plot_item.mapFromScene(2 * ev.pos() - pos)
+            pos = self.data_img_item.mapFromScene(2 * ev.pos() - pos)
             self.mouse_left_clicked.emit(pos.x(), pos.y())
 
     def myMouseDoubleClickEvent(self, ev):
@@ -208,7 +209,7 @@ class ImgWidget(QtCore.QObject):
             self.auto_range()
         if ev.button() == QtCore.Qt.LeftButton:
             pos = self.img_view_box.mapFromScene(ev.pos())
-            pos = self.img_scatter_plot_item.mapFromScene(2 * ev.pos() - pos)
+            pos = self.data_img_item.mapFromScene(2 * ev.pos() - pos)
             self.mouse_left_double_clicked.emit(pos.x(), pos.y())
 
     def myMouseDragEvent(self, ev, axis=None):
@@ -284,7 +285,7 @@ class CalibrationCakeWidget(ImgWidget):
     def activate_vertical_line(self):
         if not self.vertical_line in self.img_view_box.addedItems:
             self.img_view_box.addItem(self.vertical_line)
-            self.vertical_line.setVisible(True) #oddly this is needed for the line to be displayed correctly
+            self.vertical_line.setVisible(True)  # oddly this is needed for the line to be displayed correctly
 
     def deactivate_vertical_line(self):
         if self.vertical_line in self.img_view_box.addedItems:

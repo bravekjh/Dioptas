@@ -29,7 +29,6 @@ from ..utility import QtTest, unittest_data_path
 from ...model.DioptasModel import DioptasModel
 from ...controller.CalibrationController import CalibrationController
 from ...widgets.CalibrationWidget import CalibrationWidget
-from ... import calibrants_path
 
 # mocking the functions which will block the unittest for some reason...
 QtWidgets.QApplication.processEvents = MagicMock()
@@ -50,6 +49,14 @@ class TestCalibrationController(QtTest):
     def tearDown(self):
         del self.model
         gc.collect()
+
+    def test_selecting_peaks(self):
+        self.model.img_model.load(os.path.join(unittest_data_path, 'CeO2_Pilatus1M.tif'))
+        self.calibration_widget.img_widget.mouse_left_clicked.emit(646, 517.66443467 )
+        self.assertEqual(len(self.calibration_widget.img_widget.scatter_plot_items), 1)
+        self.calibration_widget.img_widget.mouse_left_clicked.emit(525.252854758, 667.380513299)
+        self.assertEqual(len(self.calibration_widget.img_widget.scatter_plot_items), 2)
+
 
     def test_automatic_calibration(self):
         QtWidgets.QFileDialog.getOpenFileName = MagicMock(
@@ -128,4 +135,4 @@ class TestCalibrationController(QtTest):
         del current_displayed_calibration['polarization_factor']
         self.assertEqual(model_calibration, current_displayed_calibration)
 
-        current_displayed_calibration = self.calibration_widget.get_pyFAI_parameter()
+        self.calibration_widget.get_pyFAI_parameter()

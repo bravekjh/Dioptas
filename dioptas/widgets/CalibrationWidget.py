@@ -100,7 +100,7 @@ class CalibrationWidget(QtWidgets.QWidget):
         self.select_peak_rb = peak_selection_gb.select_peak_rb
         self.search_size_sb = peak_selection_gb.search_size_sb
         self.automatic_peak_num_inc_cb = peak_selection_gb.automatic_peak_num_inc_cb
-        self.clear_peaks_btn = peak_selection_gb.clear_all_peaks_btn
+        self.clear_all_peaks_btn = peak_selection_gb.clear_all_peaks_btn
 
         self.f2_update_btn = self.calibration_control_widget.fit2d_parameters_widget.update_btn
         self.pf_update_btn = self.calibration_control_widget.pyfai_parameters_widget.update_btn
@@ -468,10 +468,7 @@ class PeakSelectionGroupBox(QtWidgets.QGroupBox):
         self._search_size_layout.addWidget(LabelAlignRight('Search size:'))
         self._search_size_layout.addWidget(self.search_size_sb)
         self._search_size_layout.addSpacerItem(HorizontalSpacerItem())
-
         self._layout.addLayout(self._search_size_layout)
-
-        self.clear_all_peaks_btn = FlatButton("Clear All Peaks")
 
         self.setLayout(self._layout)
 

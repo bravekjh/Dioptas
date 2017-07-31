@@ -76,7 +76,7 @@ class CalibrationController(object):
         self.widget.calibrate_btn.clicked.connect(self.calibrate)
         self.widget.refine_btn.clicked.connect(self.refine)
 
-        self.widget.clear_peaks_btn.clicked.connect(self.clear_peaks_btn_click)
+        self.widget.clear_all_peaks_btn.clicked.connect(self.clear_all_peaks_btn_click)
 
         self.widget.f2_wavelength_cb.stateChanged.connect(self.wavelength_cb_changed)
         self.widget.pf_wavelength_cb.stateChanged.connect(self.wavelength_cb_changed)
@@ -101,23 +101,23 @@ class CalibrationController(object):
 
     def rotate_m90_btn_clicked(self):
         self.model.img_model.rotate_img_m90()
-        self.clear_peaks_btn_click()
+        self.clear_all_peaks_btn_click()
 
     def rotate_p90_btn_clicked(self):
         self.model.img_model.rotate_img_p90()
-        self.clear_peaks_btn_click()
+        self.clear_all_peaks_btn_click()
 
     def invert_horizontal_btn_clicked(self):
         self.model.img_model.flip_img_horizontally()
-        self.clear_peaks_btn_click()
+        self.clear_all_peaks_btn_click()
 
     def invert_vertical_btn_clicked(self):
         self.model.img_model.flip_img_vertically()
-        self.clear_peaks_btn_click()
+        self.clear_all_peaks_btn_click()
 
     def reset_transformations_btn_clicked(self):
         self.model.img_model.reset_img_transformations()
-        self.clear_peaks_btn_click()
+        self.clear_all_peaks_btn_click()
 
     def create_update_signals(self):
         """
@@ -240,8 +240,8 @@ class CalibrationController(object):
         # filter them to only show the ones visible with the current pattern
         pattern_min = np.min(self.model.pattern.x)
         pattern_max = np.max(self.model.pattern.x)
-        calibrant_line_positions = calibrant_line_positions[calibrant_line_positions>pattern_min]
-        calibrant_line_positions = calibrant_line_positions[calibrant_line_positions<pattern_max]
+        calibrant_line_positions = calibrant_line_positions[calibrant_line_positions > pattern_min]
+        calibrant_line_positions = calibrant_line_positions[calibrant_line_positions < pattern_max]
         self.widget.pattern_widget.plot_vertical_lines(positions=calibrant_line_positions,
                                                        name=self._calibrants_file_names_list[current_index])
 
@@ -283,36 +283,37 @@ class CalibrationController(object):
         if not (0 <= y < shape[1]):
             return
 
-        peak_ind = self.widget.peak_num_sb.value()
+        peak_ind = self.widget.peak_num_sb.value() - 1
         if self.widget.automatic_peak_search_rb.isChecked():
-            points = self.model.calibration_model.find_peaks_automatic(x, y, peak_ind - 1)
+            points = self.model.calibration_model.find_peaks_automatic(x, y, peak_ind)
         else:
             search_size = np.int(self.widget.search_size_sb.value())
-            points = self.model.calibration_model.find_peak(x, y, search_size, peak_ind - 1)
+            points = self.model.calibration_model.find_peak(x, y, search_size, peak_ind)
         if len(points):
-            self.plot_points(points)
+            self.plot_points_ring(peak_ind)
             if self.widget.automatic_peak_num_inc_cb.checkState():
-                self.widget.peak_num_sb.setValue(peak_ind + 1)
+                self.widget.peak_num_sb.setValue(peak_ind + 2)
 
-    def plot_points(self, points=None):
+    def plot_points_ring(self, ind):
         """
         Plots points into the image view.
-        :param points:
-            list of points, whereby a point is a [x,y] element. If it is none it will plot the points stored in the
-            calibration_data
+        :param ind:
+            ring index
         """
-        if points is None:
-            try:
-                points = self.model.calibration_model.get_point_array()
-            except IndexError:
-                points = []
-        if len(points):
-            self.widget.img_widget.add_scatter_data(points[:, 0] + 0.5, points[:, 1] + 0.5)
 
-    def clear_peaks_btn_click(self):
+        points = self.model.calibration_model.get_point_array()
+        points_on_ring = points[points[:, 2] == ind, :2]
+        if len(points):
+            if len(self.widget.img_widget.scatter_plot_items) < (ind + 1):
+                for _ in range(len(self.widget.img_widget.scatter_plot_items), ind + 1):
+                    self.widget.img_widget.add_scatter_plot()
+            self.widget.img_widget.set_scatter_plot_data(ind,
+                                                         points_on_ring[:, 0] + 0.5,
+                                                         points_on_ring[:, 1] + 0.5)
+
+    def clear_all_peaks_btn_click(self):
         """
         Deletes all points/peaks in the calibration_data and in the gui.
-        :return:
         """
         self.model.calibration_model.clear_peaks()
         self.widget.img_widget.clear_scatter_plot()
@@ -384,9 +385,9 @@ class CalibrationController(object):
                                                     self.widget)
 
         progress_dialog.move(int(self.widget.tab_widget.x() + self.widget.tab_widget.size().width() / 2.0 - \
-                             progress_dialog.size().width() / 2.0),
+                                 progress_dialog.size().width() / 2.0),
                              int(self.widget.tab_widget.y() + self.widget.tab_widget.size().height() / 2.0 -
-                             progress_dialog.size().height() / 2.0))
+                                 progress_dialog.size().height() / 2.0))
 
         progress_dialog.setWindowTitle('   ')
         progress_dialog.setWindowModality(QtCore.Qt.WindowModal)
@@ -413,7 +414,7 @@ class CalibrationController(object):
         num_rings = self.widget.options_num_rings_sb.value()
 
         progress_dialog = self.create_progress_dialog("Refining Calibration.", 'Abort', num_rings)
-        self.clear_peaks_btn_click()
+        self.clear_all_peaks_btn_click()
         self.load_calibrant(wavelength_from='pyFAI')  # load right calibration file
 
         # get options
@@ -436,7 +437,7 @@ class CalibrationController(object):
         self.widget.peak_num_sb.setValue(3)
         if len(self.model.calibration_model.points):
             self.model.calibration_model.refine()
-            self.plot_points()
+            self.plot_points_ring(0)
         else:
             print('Did not find any Points with the specified parameters for the first two rings!')
 
@@ -444,11 +445,11 @@ class CalibrationController(object):
 
         refinement_canceled = False
         for i in range(num_rings - 2):
-            points = self.model.calibration_model.search_peaks_on_ring(i + 2, delta_tth, intensity_min_factor,
-                                                                       intensity_max, mask)
+            self.model.calibration_model.search_peaks_on_ring(i + 2, delta_tth, intensity_min_factor,
+                                                              intensity_max, mask)
             self.widget.peak_num_sb.setValue(i + 4)
             if len(self.model.calibration_model.points):
-                self.plot_points(points)
+                self.plot_points_ring(i + 2)
                 QtWidgets.QApplication.processEvents()
                 QtWidgets.QApplication.processEvents()
                 self.model.calibration_model.refine()
